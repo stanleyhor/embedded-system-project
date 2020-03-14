@@ -1,0 +1,85 @@
+<html>
+  <head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+   <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+   <script type="text/javascript">
+      google.charts.load('current', {'packages':['gauge']});
+      google.charts.setOnLoadCallback(drawChart);
+        var data;
+        var chart, options;
+        var oldVal;
+        var maxDataPoints = 10;
+      function drawChart() {
+
+        // var data = google.visualization.arrayToDataTable([
+        //   ['Label', 'Value'],
+        //   ['Memory', 80],
+        //   ['CPU', 55],
+        //   ['Network', 68]
+        // ]);
+
+        data = google.visualization.arrayToDataTable([ //#B
+            ['Temperature'],
+            [0]
+        ]);
+
+        options = {
+          width: 400, height: 120,
+          redFrom: 26.5, redTo: 27,
+          yellowFrom:26, yellowTo: 26.5,
+          minorTicks: 5,
+          max: 27,
+          min: 25
+        };
+
+        chart = new google.visualization.Gauge(document.getElementById('chart_div'));
+
+        chart.draw(data, options);
+
+        // setInterval(function() {
+        //   data.setValue(0, 1, 40 + Math.round(60 * Math.random()));
+        //   chart.draw(data, options);
+        // }, 13000);
+        // setInterval(function() {
+        //   data.setValue(1, 1, 40 + Math.round(60 * Math.random()));
+        //   chart.draw(data, options);
+        // }, 5000);
+        // setInterval(function() {
+        //   data.setValue(2, 1, 60 + Math.round(20 * Math.random()));
+        //   chart.draw(data, options);
+        // }, 26000);
+      }
+
+      function addDataPoint(dataPoint) { //#D
+            // if (data.getNumberOfRows() > maxDataPoints) {
+            // data.removeRow(0);
+            // }
+            if (dataPoint.value != oldVal) {
+                oldVal = dataPoint.value;
+                console.log(oldVal);
+            }
+            data.setValue(0, 0, dataPoint.value);
+            chart.draw(data, options);
+        }
+
+        function getTime() {
+            var d = new Date();
+            return d.toLocaleTimeString();
+        }
+
+        function doPoll() { //#F
+            console.log('---calling....')
+            $.getJSON('http://devices.webofthings.io/pi/sensors/temperature/value',
+            function (result) {
+                addDataPoint(result); //#G
+                setTimeout(doPoll, 2000);
+            });
+            }
+
+            doPoll();
+    </script>
+  </head>
+  <body>
+    <div id="chart_div" style="width: 400px; height: 120px;"></div>
+  </body>
+</html>

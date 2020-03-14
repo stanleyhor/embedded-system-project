@@ -1,0 +1,143 @@
+<!doctype html>
+
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+        <title>WUCA - Web of Things</title>
+        <style>
+            .outterBox {
+                margin-top: 20px;
+                text-align: center;
+            }
+            table {
+                margin: auto;
+            }
+        </style>
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+        <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+        <script type="text/javascript">
+            google.charts.load('current', {'packages':['gauge']});
+            google.charts.setOnLoadCallback(drawChart);
+            var data;
+            var chart, options;
+            var oldVal;
+            var maxDataPoints = 10;
+            function drawChart() {
+                data = google.visualization.arrayToDataTable([ //#B
+                    ['Temperature'],
+                    [0]
+                ]);
+
+                options = {
+                    width: 700,
+                    redFrom: 26.5, redTo: 27,
+                    yellowFrom:26, yellowTo: 26.5,
+                    minorTicks: 5,
+                    max: 27,
+                    min: 25
+                };
+
+                chart = new google.visualization.Gauge(document.getElementById('gauge'));
+
+                chart.draw(data, options);
+            }
+
+            function addDataPoint(dataPoint) { //#D
+                // if (data.getNumberOfRows() > maxDataPoints) {
+                // data.removeRow(0);
+                // }
+                if (!data) {
+                    return;
+                }
+                if (dataPoint.value != oldVal) {
+                    oldVal = dataPoint.value;
+                    console.log(oldVal);
+                }
+                data.setValue(0, 0, dataPoint.value);
+                chart.draw(data, options);
+            }
+
+            function getTime() {
+                var d = new Date();
+                return d.toLocaleTimeString();
+            }
+
+            function doPoll() {
+//                $.getJSON('http://devices.webofthings.io/pi/sensors/temperature/value',
+                $.getJSON('/temperature',
+                function (result) {
+//                    console.log('----temperature:', result.temperature);
+                    addDataPoint({value: result.temperature}); //#G
+                    setTimeout(doPoll, 2000);
+                });
+            }
+
+            doPoll();
+
+            /***************************************/
+
+            let buttonClick = 0;
+
+            function serverButtonClick(onoff) {
+                $.post('/led/'+onoff,
+                        function (result) {
+//                            console.log('----result:', result);
+                        });
+            }
+
+            function handleButtonClick() {
+                buttonClick ^= true;
+                serverButtonClick(buttonClick);
+                updateLedStatus();
+            }
+
+            function readLedStatus() {
+                $.getJSON('/led',
+                        function (result) {
+                            buttonClick = result.onoff;
+                        });
+            }
+
+            function updateLedStatus() {
+                let status = buttonClick ? 'ON' : 'OFF';
+
+                readLedStatus();
+                // ready LED status
+
+
+                $('#ledStatus').html(status);
+            }
+
+            $(document).ready(_ => {
+                updateLedStatus();
+            })
+
+
+        </script>
+    </head>
+    <body>
+        <p>
+            <h1 class="text-center">WUCA</h1>
+        </p>
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-6 outterBox">
+                    LED: <span id="ledStatus"></span>
+                    <br />
+                    <button type="button" class="btn btn-primary" onClick="handleButtonClick()">Toggle LED</button>
+                </div>
+                <div class="col-lg-6 outterBox text-center">
+                    <div class="display: inline-block" id="gauge"></div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+        
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    </body>
+</html>
